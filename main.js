@@ -26,45 +26,128 @@ toast("Hello, Auto.js");
 auto();
 let deviceWidth = device.width;
 let deviceHeight = device.height;
-var url = "http://192.168.1.56:8011/kepuapp";
+var readTotalNum = 6
+var url = "http://192.168.1.56:8011";
 var tmpList = [
   {
     id: 1997,
     username: "张欣怡",
-    phone: 16557972168,
-    password: "asd123456",
-    valid: 1,
-  },
-  {
-    id: 1998,
-    username: "韩啸熙",
-    phone: 17031274032,
-    password: "asd123456",
-    valid: 1,
-  },
-  {
-    id: 1999,
-    username: "张伊雪",
-    phone: 17037064645,
-    password: "asd123456",
+    phone: 13270837022,
+    password: "12345678@",
     valid: 1,
   },
 ];
 run();
 
-function run() {
+function run () {
   console.show();
   console.clear();
   // var userList = getInfo();
   var userList = tmpList;
   launchApp();
-  login(tmpList[0]);
+  main(tmpList[0]);
   back();
   console.hide();
 }
 
-function getInfo() {
-  var res = http.get(url);
+function main (userinfo) {
+  login(userinfo);
+  text("推荐").waitFor()
+  text("推荐").click()
+  if (id("view_page").exists()) {
+    if (id("rv_home_common").exists()) {
+      readNews(userinfo)
+    }
+  }
+}
+
+function readNews (userinfo) {
+  log("开始刷")
+  sleep(2000)
+  let readResule = {
+    readCount: 0
+  }
+  while (readTotalNum > readResule.readCount) {
+    let thisReadResule = readCurrentScreenNews(userinfo)
+    readResule.readCount += thisReadResule.readCount
+    if (text("推荐").exists())
+      swipe(deviceWidth / 2, deviceHeight - 300, deviceWidth / 2,
+        deviceHeight - (deviceHeight - 70), 1500)//上滑x
+    else
+      back()
+    sleep(1000)
+    log("累计阅读文章数量" + readResule.readCount)
+  }
+}
+
+// 阅读当前屏幕显示的新闻,返回阅读时长和数量
+function readCurrentScreenNews (userinfo) {
+  let readResule = {
+    readCount: 0
+  }
+  newBack();
+  let newsTitleArray = getCurrentScreenNews()
+  log(newsTitleArray)
+  log("当前页面新闻数量：" + newsTitleArray.length)
+  if (newsTitleArray.length > 0) {
+    let i = newsTitleArray.length - 1
+    if (newsTitleArray[i] == undefined) {
+      log("当前屏幕文章已经阅读完")
+      return readResule
+    }
+    log(newsTitleArray[i].text())
+    userinfo['title'] = newsTitleArray[i].text()
+    if (postInfo(userinfo)) {
+      return readResule
+    }
+    let NewsIndexFrame = getNewsFrameIndexTitleUi(newsTitleArray[i])
+    if (NewsIndexFrame == null) return readResule
+    let newsReadResule = shareNewsIndexTitleUi(NewsIndexFrame)
+    insertInfo(userinfo)
+    readResule.readCount += newsReadResule.readCount
+    log("当前屏幕阅读文章数量" + readResule.readCount)
+  }
+  return readResule
+}
+//传入文章的title的控件对象,返回文章的可点击对象frame
+function getNewsFrameIndexTitleUi (titleUi) {
+  let frame = titleUi
+  while (!frame.clickable()) {
+    frame = frame.parent()
+    if (frame == null) {
+      log("没有可点击的框架" + titleUi.text())
+      return null
+    }
+  }
+  return frame
+}
+
+//阅读一篇文章，传入文章的title的控件对象
+function shareNewsIndexTitleUi (NewsIndexFrame) {
+  NewsIndexFrame.click();
+  sleep(1000)
+  if (!text("专题详情").exists()) {
+    share()
+    back()
+  }
+  sleep(1000)
+  newBack()
+  return {
+    readCount: 1
+  }
+}
+//找出当前页面所有文章的标题
+function getCurrentScreenNews () {
+  let newsTitleArray = id("title_tv").find()
+  return newsTitleArray;
+  // id("rv_home_common").findOne().children().forEach(child => {
+  //   var target = child.find(id("title_tv"));
+  //   return target;
+  // });
+}
+
+function getInfo () {
+  var res = http.get(url + '/kepuapp');
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
@@ -74,16 +157,30 @@ function getInfo() {
   }
 }
 
-function postInfo(item) {
-  var res = http.post(url, item);
+function postInfo (item) {
+  var res = http.postJson(url + '/kepuapp', item);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
-    log("请求成功: " + res.statusCode);
+    if (res.body.json()['status'] === 'success')
+      return true
+    else
+      return false
+  }
+}
+function insertInfo (item) {
+  var res = http.postJson(url + '/insert', item);
+  if (res.statusCode != 200) {
+    log("请求失败: " + res.statusCode);
+  } else {
+    if (res.body.json()['status'] === 'success')
+      return true
+    else
+      return false
   }
 }
 
-function launchApp() {
+function launchApp () {
   let isLauchApp = false;
   while (!isLauchApp) {
     log("尝试启动");
@@ -93,54 +190,68 @@ function launchApp() {
     if (mesbox) {
       mesbox.click();
     }
+    back()
     isLauchApp = id("bottom_layout").findOnce();
   }
   log("已启动");
 }
 
-function login(userinfo) {
+function login (userinfo) {
   log("开始登录！")
   id("tab_image_iv5").waitFor();
   id("tab_image_iv5").click();
-  let loginBox = id("login_tv").findOnce();
+  var loginBox = id("login_tv").findOnce();
   if (!loginBox || !loginBox.text() === "登录/注册") {
     logout();
+    sleep(1000);
+    id("login_tv").waitFor();
   }
-  loginBox.click();
+  id("login_tv").click();
   sleep(3000);
-  let yijian = id("content")
-    .className("android.widget.RelativeLayout")
-    .className("android.widget.RelativeLayout")
-    .className("android.widget.ImageView");
-  if (yijian) {
-    yijian.click();
-    log.error("一键登录！");
-  }
-
   id("et_phone").setText(userinfo["phone"]);
   id("et_psw").setText(userinfo["password"]);
   id("login_bt").click();
-  if (id("tab_image_iv1").exists()) {
-    id("tab_image_iv1").click();
-  } else {
-    log.error("登录出错！");
-    // addWrongAccount(item)
-  }
+  sleep(3000);
   if (id("tv_cancel").exists()) {
-    id("tv_cancel").click();
-    log.error("请完善身份信息！");
+    id("tv_cancel").findOne().click();
+    log("请完善身份信息！");
     // addWrongAccount(item);
   }
+  if (id("tab_image_iv1").exists()) {
+    id("tab_image_iv1").findOne().click();
+  } else {
+    log("登录出错！");
+    // addWrongAccount(item)
+  }
+}
+function share () {
+  if (id("zhuanfa_share_rly").exists()) {
+    id("zhuanfa_share_rly").findOnce().click();
+  }
+  if (id("ll_third_share").exists()) {
+    text("QQ好友").findOne().parent().click()
+  }
+  sleep(1000)
+  // packageName("com.tencent.mobileqq").text("我的电脑").findOnce().parent().click()
+  packageName("com.tencent.mobileqq").className("android.widget.RelativeLayout").clickable(true).findOne().click()
+  id("com.tencent.mobileqq:id/dialogRightBtn").findOne().click();
+  sleep(1000)
+  id("com.tencent.mobileqq:id/dialogLeftBtn").findOne().click();
+  if (id("iv_close").exists()) id("iv_close").findOne().click();
+  sleep(3000)
+  id("back_iv").findOne().click();
+
 }
 
-function back() {
-  if (id("back_iv").exists()) id("back_iv").click();
-  if (id("back").exists()) id("back").click();
-  if (id("ivTitleBtnLeftButton").exists()) id("ivTitleBtnLeftButton").click();
-  if (id("ivTitleBtnLeft").exists()) id("ivTitleBtnLeft").click();
+function newBack () {
+  if (id("back_iv").exists()) id("back_iv").findOne().click();
+  if (id("back").exists()) id("back").findOne().click();
+  if (id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").findOne().click();
+  if (id("com.tencent.mobileqq:id/ivTitleBtnLeft").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeft").findOne().click();
+  if (id("iv_close").exists()) id("iv_close").findOne().click();
 }
 
-function logout() {
+function logout () {
   id("set_iv").waitFor();
   id("set_iv").click();
   sleep(2000);
