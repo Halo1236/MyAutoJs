@@ -51,12 +51,14 @@ function run () {
 }
 
 function main (userinfo) {
-  login(userinfo);
-  text("推荐").waitFor()
-  text("推荐").click()
-  if (id("view_page").exists()) {
-    if (id("rv_home_common").exists()) {
-      readNews(userinfo)
+  let haslogin=login(userinfo);
+  if (haslogin) {
+    text("推荐").waitFor()
+    text("推荐").click()
+    if (id("view_page").exists()) {
+      if (id("rv_home_common").exists()) {
+        readNews(userinfo)
+      }
     }
   }
 }
@@ -87,16 +89,16 @@ function readCurrentScreenNews (userinfo) {
   }
   newBack();
   let newsTitleArray = getCurrentScreenNews()
-  log(newsTitleArray)
   log("当前页面新闻数量：" + newsTitleArray.length)
-  if (newsTitleArray.length > 0) {
-    let i = newsTitleArray.length - 1
+  for (let i = 0; i < newsTitleArray.length; i++) {
+    // let i = newsTitleArray.length - 1
     if (newsTitleArray[i] == undefined) {
       log("当前屏幕文章已经阅读完")
       return readResule
     }
     log(newsTitleArray[i].text())
     userinfo['title'] = newsTitleArray[i].text()
+    log(userinfo)
     if (postInfo(userinfo)) {
       return readResule
     }
@@ -215,14 +217,17 @@ function login (userinfo) {
   if (id("tv_cancel").exists()) {
     id("tv_cancel").findOne().click();
     log("请完善身份信息！");
+    return false
     // addWrongAccount(item);
   }
   if (id("tab_image_iv1").exists()) {
     id("tab_image_iv1").findOne().click();
   } else {
     log("登录出错！");
+    return false
     // addWrongAccount(item)
   }
+  return true
 }
 function share () {
   if (id("zhuanfa_share_rly").exists()) {
@@ -240,7 +245,6 @@ function share () {
   if (id("iv_close").exists()) id("iv_close").findOne().click();
   sleep(3000)
   id("back_iv").findOne().click();
-
 }
 
 function newBack () {
