@@ -26,7 +26,7 @@ toast("Hello, Auto.js");
 auto();
 let deviceWidth = device.width;
 let deviceHeight = device.height;
-var readTotalNum = 6
+var readTotalNum = 20
 var url = "http://192.168.1.56:8011";
 var tmpList = [
   {
@@ -36,28 +36,50 @@ var tmpList = [
     password: "12345678@",
     valid: 1,
   },
+  {
+    id: 1997,
+    username: "111",
+    phone: 13270837022,
+    password: "12345678@",
+    valid: 1,
+  },
+  {
+    id: 1997,
+    username: "222",
+    phone: 13270837022,
+    password: "12345678@",
+    valid: 1,
+  },
 ];
 run();
-
 function run () {
   console.show();
   console.clear();
-  // var userList = getInfo();
-  var userList = tmpList;
+  var userList = getInfo();
+  // var userList = tmpList;
   launchApp();
-  main(tmpList[0]);
-  back();
-  console.hide();
+  try {
+    while (true) {
+      for (let index = 0; index < userList.length; index++) {
+        main(userList[index]);
+      }
+    }
+  } catch (error) {
+    console.trace(error);
+    back();
+    console.hide();
+    run();
+  }
 }
 
 function main (userinfo) {
-  let haslogin=login(userinfo);
+  let haslogin = login(userinfo);
   if (haslogin) {
-    text("推荐").waitFor()
-    text("推荐").click()
+    text("推荐").waitFor();
+    text("推荐").click();
     if (id("view_page").exists()) {
       if (id("rv_home_common").exists()) {
-        readNews(userinfo)
+        readNews(userinfo);
       }
     }
   }
@@ -65,7 +87,7 @@ function main (userinfo) {
 
 function readNews (userinfo) {
   log("开始刷")
-  sleep(2000)
+  sleep(3000)
   let readResule = {
     readCount: 0
   }
@@ -98,10 +120,10 @@ function readCurrentScreenNews (userinfo) {
     }
     log(newsTitleArray[i].text())
     userinfo['title'] = newsTitleArray[i].text()
-    log(userinfo)
     if (postInfo(userinfo)) {
-      return readResule
+      continue
     }
+    log(userinfo)
     let NewsIndexFrame = getNewsFrameIndexTitleUi(newsTitleArray[i])
     if (NewsIndexFrame == null) return readResule
     let newsReadResule = shareNewsIndexTitleUi(NewsIndexFrame)
@@ -142,10 +164,6 @@ function shareNewsIndexTitleUi (NewsIndexFrame) {
 function getCurrentScreenNews () {
   let newsTitleArray = id("title_tv").find()
   return newsTitleArray;
-  // id("rv_home_common").findOne().children().forEach(child => {
-  //   var target = child.find(id("title_tv"));
-  //   return target;
-  // });
 }
 
 function getInfo () {
@@ -170,15 +188,22 @@ function postInfo (item) {
       return false
   }
 }
+
 function insertInfo (item) {
   var res = http.postJson(url + '/insert', item);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
-    if (res.body.json()['status'] === 'success')
-      return true
-    else
-      return false
+    log("已阅读插入成功！");
+  }
+}
+
+function insertWrong (item) {
+  var res = http.postJson(url + '/wrong', item);
+  if (res.statusCode != 200) {
+    log("请求失败: " + res.statusCode);
+  } else {
+    log("插入无效账号成功！");
   }
 }
 
@@ -200,67 +225,68 @@ function launchApp () {
 
 function login (userinfo) {
   log("开始登录！")
-  id("tab_image_iv5").waitFor();
-  id("tab_image_iv5").click();
+  id("tab_image_iv5").findOne(6000).click();
   var loginBox = id("login_tv").findOnce();
   if (!loginBox || !loginBox.text() === "登录/注册") {
     logout();
     sleep(1000);
-    id("login_tv").waitFor();
   }
-  id("login_tv").click();
+  id("login_tv").findOne(6000).click();
   sleep(3000);
   id("et_phone").setText(userinfo["phone"]);
   id("et_psw").setText(userinfo["password"]);
   id("login_bt").click();
   sleep(3000);
-  if (id("tv_cancel").exists()) {
-    id("tv_cancel").findOne().click();
-    log("请完善身份信息！");
-    return false
-    // addWrongAccount(item);
+
+  if (text("暂不升级").exists()) {
+    text("暂不升级").findOne(6000).click();
   }
+
+  if (text("取消").exists()) {
+    text("取消").findOne(6000).click();
+    log("请完善身份信息！");
+    insertWrong(userinfo)
+    return false
+  }
+
   if (id("tab_image_iv1").exists()) {
-    id("tab_image_iv1").findOne().click();
+    id("tab_image_iv1").findOne(6000).click();
   } else {
     log("登录出错！");
+    insertWrong(userinfo)
+    back()
     return false
-    // addWrongAccount(item)
   }
   return true
 }
+
 function share () {
-  if (id("zhuanfa_share_rly").exists()) {
-    id("zhuanfa_share_rly").findOnce().click();
-  }
+  id("zhuanfa_share_rly").findOne(6000).click();
   if (id("ll_third_share").exists()) {
-    text("QQ好友").findOne().parent().click()
+    text("QQ好友").findOne(6000).parent().click()
   }
-  sleep(1000)
-  // packageName("com.tencent.mobileqq").text("我的电脑").findOnce().parent().click()
-  packageName("com.tencent.mobileqq").className("android.widget.RelativeLayout").clickable(true).findOne().click()
-  id("com.tencent.mobileqq:id/dialogRightBtn").findOne().click();
-  sleep(1000)
-  id("com.tencent.mobileqq:id/dialogLeftBtn").findOne().click();
-  if (id("iv_close").exists()) id("iv_close").findOne().click();
+  sleep(2000)
+  packageName("com.tencent.mobileqq").className("android.widget.RelativeLayout").clickable(true).findOne(6000).click()
+  id("com.tencent.mobileqq:id/dialogRightBtn").findOne(6000).click();
   sleep(3000)
-  id("back_iv").findOne().click();
+  id("com.tencent.mobileqq:id/dialogLeftBtn").findOne(6000).click();
+  sleep(3000)
+  let iv_close = id("iv_close").findOnce()
+  if (iv_close) iv_close.click();
+  id("back_iv").findOne(6000).click();
 }
 
 function newBack () {
-  if (id("back_iv").exists()) id("back_iv").findOne().click();
-  if (id("back").exists()) id("back").findOne().click();
-  if (id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").findOne().click();
-  if (id("com.tencent.mobileqq:id/ivTitleBtnLeft").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeft").findOne().click();
-  if (id("iv_close").exists()) id("iv_close").findOne().click();
+  if (id("back_iv").exists()) id("back_iv").findOne(6000).click();
+  if (id("back").exists()) id("back").findOne(6000).click();
+  if (id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeftButton").findOne(6000).click();
+  if (id("com.tencent.mobileqq:id/ivTitleBtnLeft").exists()) id("com.tencent.mobileqq:id/ivTitleBtnLeft").findOne(6000).click();
+  if (id("iv_close").exists()) id("iv_close").findOne(6000).click();
 }
 
 function logout () {
-  id("set_iv").waitFor();
-  id("set_iv").click();
+  id("set_iv").findOne(6000).click();
   sleep(2000);
-  id("logout_bt").waitFor();
-  id("logout_bt").click();
-  id("tv_ok").waitFor();
-  id("tv_ok").click();
+  id("logout_bt").findOne(6000).click();
+  id("tv_ok").findOne(6000).click();
 }
