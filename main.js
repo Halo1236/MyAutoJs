@@ -60,19 +60,19 @@ function run () {
   var userList = getInfo();
   // var userList = tmpList;
   launchApp();
-  // try {
-  while (true) {
-    for (let index = 0; index < userList.length; index++) {
-      main(userList[index]);
+  try {
+    while (true) {
+      for (let index = 0; index < userList.length; index++) {
+        main(userList[index]);
+      }
     }
+  } catch (error) {
+    console.error(error);
+    console.trace(error);
+    back();
+    console.hide();
+    run();
   }
-  // } catch (error) {
-  //   console.error(error);
-  //   console.trace(error);
-  //   back();
-  //   console.hide();
-  //   run();
-  // }
 }
 
 function main (userinfo) {
