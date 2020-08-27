@@ -24,8 +24,10 @@ log("*    Code is far away from bug!");
 log("*        神兽保佑,代码无bug");
 toast("Hello, Auto.js");
 auto();
-let deviceWidth = device.width;
-let deviceHeight = device.height;
+let deviceWidth = device.width === 0 ? 1080 : device.width;
+let deviceHeight = device.height === 0 ? 1920 : device.height;
+log(deviceWidth)
+log(deviceHeight)
 var readTotalNum = 20
 var url = "http://192.168.1.56:8011";
 var tmpList = [
@@ -51,25 +53,26 @@ var tmpList = [
     valid: 1,
   },
 ];
-run();
+run()
 function run () {
   console.show();
   console.clear();
   var userList = getInfo();
   // var userList = tmpList;
   launchApp();
-  try {
-    while (true) {
-      for (let index = 0; index < userList.length; index++) {
-        main(userList[index]);
-      }
+  // try {
+  while (true) {
+    for (let index = 0; index < userList.length; index++) {
+      main(userList[index]);
     }
-  } catch (error) {
-    console.trace(error);
-    back();
-    console.hide();
-    run();
   }
+  // } catch (error) {
+  //   console.error(error);
+  //   console.trace(error);
+  //   back();
+  //   console.hide();
+  //   run();
+  // }
 }
 
 function main (userinfo) {
@@ -172,7 +175,7 @@ function getInfo () {
     log("请求失败: " + res.statusCode);
   } else {
     var account = res.body.json();
-    log(account);
+    // log(account);
     return account;
   }
 }
