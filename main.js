@@ -29,6 +29,9 @@ let deviceHeight = device.height === 0 ? 1920 : device.height;
 log(deviceWidth)
 log(deviceHeight)
 var readTotalNum = 20
+var maxReadNum = 2000
+var hasRead = 0
+var areaStr = ''
 var url = "http://192.168.1.56:8011";
 var tmpList = [
   {
@@ -37,23 +40,20 @@ var tmpList = [
     phone: 13270837022,
     password: "12345678@",
     valid: 1,
-  },
-  {
-    id: 1997,
-    username: "111",
-    phone: 13270837022,
-    password: "12345678@",
-    valid: 1,
-  },
-  {
-    id: 1997,
-    username: "222",
-    phone: 13270837022,
-    password: "12345678@",
-    valid: 1,
-  },
+  }
 ];
-run()
+
+threads.start(function () {
+  setTimeout(function () {
+    log('reboot')
+    shell('reboot', true);
+  }, 3 * 3600 * 1000);
+});
+
+setTimeout(function () {
+  run();
+}, 10 * 1000);
+
 function run () {
   console.show();
   console.clear();
@@ -61,16 +61,16 @@ function run () {
   // var userList = tmpList;
   launchApp();
   try {
-    while (true) {
+    while (hasRead < maxReadNum) {
       for (let index = 0; index < userList.length; index++) {
         main(userList[index]);
       }
     }
+    console.hide();
   } catch (error) {
     console.error(error);
     console.trace(error);
     back();
-    console.hide();
     run();
   }
 }
@@ -131,6 +131,7 @@ function readCurrentScreenNews (userinfo) {
     if (NewsIndexFrame == null) return readResule
     let newsReadResule = shareNewsIndexTitleUi(NewsIndexFrame)
     insertInfo(userinfo)
+    hasRead += 1
     readResule.readCount += newsReadResule.readCount
     log("当前屏幕阅读文章数量" + readResule.readCount)
   }
@@ -170,7 +171,7 @@ function getCurrentScreenNews () {
 }
 
 function getInfo () {
-  var res = http.get(url + '/kepuapp');
+  var res = http.get(url + '/kepuapp?area=' + areaStr);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
@@ -181,7 +182,7 @@ function getInfo () {
 }
 
 function postInfo (item) {
-  var res = http.postJson(url + '/kepuapp', item);
+  var res = http.postJson(url + '/kepuapp?area=' + areaStr, item);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
@@ -193,7 +194,7 @@ function postInfo (item) {
 }
 
 function insertInfo (item) {
-  var res = http.postJson(url + '/insert', item);
+  var res = http.postJson(url + '/insert?area=' + areaStr, item);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
@@ -201,8 +202,18 @@ function insertInfo (item) {
   }
 }
 
+function getCount () {
+  var res = http.get(url + '/insert?area=' + areaStr);
+  if (res.statusCode != 200) {
+    log("请求失败: " + res.statusCode);
+  } else {
+    var account = res.body.json();
+    return account['num'];
+  }
+}
+
 function insertWrong (item) {
-  var res = http.postJson(url + '/wrong', item);
+  var res = http.postJson(url + '/wrong?area=' + areaStr, item);
   if (res.statusCode != 200) {
     log("请求失败: " + res.statusCode);
   } else {
