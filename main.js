@@ -28,7 +28,7 @@ let deviceWidth = device.width === 0 ? 1080 : device.width;
 let deviceHeight = device.height === 0 ? 1920 : device.height;
 log(deviceWidth)
 log(deviceHeight)
-var readTotalNum = 20
+var readTotalNum = 10
 var maxReadNum = 2000
 var hasRead = 0
 var areaStr = ''
@@ -43,12 +43,12 @@ var tmpList = [
   }
 ];
 
-threads.start(function () {
-  setTimeout(function () {
-    log('reboot')
-    shell('reboot', true);
-  }, 3 * 3600 * 1000);
-});
+// threads.start(function () {
+//   setTimeout(function () {
+//     log('reboot')
+//     shell('reboot', true);
+//   }, 3 * 3600 * 1000);
+// });
 
 setTimeout(function () {
   run();
