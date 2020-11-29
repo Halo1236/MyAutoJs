@@ -29,7 +29,7 @@ let deviceHeight = device.height === 0 ? 1920 : device.height;
 log(deviceWidth)
 log(deviceHeight)
 var readTotalNum = 10
-var maxReadNum = 2000
+var maxReadNum = 20000
 var hasRead = 0
 var areaStr = ''
 var url = "http://192.168.1.56:8011";
@@ -123,9 +123,9 @@ function readCurrentScreenNews (userinfo) {
     }
     log(newsTitleArray[i].text())
     userinfo['title'] = newsTitleArray[i].text()
-    if (postInfo(userinfo)) {
-      continue
-    }
+    //if (postInfo(userinfo)) {
+    //  continue
+    //}
     log(userinfo)
     let NewsIndexFrame = getNewsFrameIndexTitleUi(newsTitleArray[i])
     if (NewsIndexFrame == null) return readResule
